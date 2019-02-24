@@ -27,7 +27,7 @@ func (*PlayerSystem) Remove(ecs.BasicEntity) {}
 
 func (pl *PlayerSystem) Update(dt float32) {
 	if engo.Input.Button("AddPlayer").JustPressed()  {
-		fmt.Println("The gamer pressed A")
+		fmt.Println("The gamer pressed X")
 		player := Player{BasicEntity: ecs.NewBasic()}
 		player.SpaceComponent = common.SpaceComponent{
 			Position: engo.Point{pl.mouseTracker.MouseX, pl.mouseTracker.MouseY},

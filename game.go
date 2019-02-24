@@ -18,10 +18,14 @@ func (*myScene) Preload() {
 }
 
 func (*myScene) Setup(u engo.Updater){
-	engo.Input.RegisterButton("AddPlayer", engo.KeyA)
+	engo.Input.RegisterButton("AddPlayer", engo.KeyX)
 	world, _ := u.(*ecs.World)
 	world.AddSystem(&common.RenderSystem{})
 	world.AddSystem(&common.MouseSystem{})
+	kbs := common.NewKeyboardScroller(
+		400, engo.DefaultHorizontalAxis,
+		engo.DefaultVerticalAxis)
+	world.AddSystem(kbs)
 	world.AddSystem(&systems.PlayerSystem{})
 	// player := Player{BasicEntity: ecs.NewBasic()}
 	// player.SpaceComponent = common.SpaceComponent{
@@ -50,6 +54,7 @@ func main(){
 		Title:"myGame",
 		Width:600,
 		Height:400,
+		StandardInputs: true,
 	}
 	engo.Run(opts,&myScene{})
 }
