@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"engo.io/engo"
 	"engo.io/engo/common"
+	"image"
+	"image/color"
 )
 
 type MouseTracker struct {
@@ -23,9 +25,43 @@ type PlayerSystem struct {
 	world *ecs.World
 }
 
+type HUD struct {
+	ecs.BasicEntity
+	common.RenderComponent
+	common.SpaceComponent
+}
+
 func (*PlayerSystem) Remove(ecs.BasicEntity) {}
 
 func (pl *PlayerSystem) Update(dt float32) {
+
+	hud := HUD{BasicEntity: ecs.NewBasic()}
+	hud.SpaceComponent = common.SpaceComponent{
+		Position: engo.Point{0, engo.WindowHeight() - 200},
+		Width:    200,
+		Height:   200,
+	}
+	hudImage := image.NewUniform(color.RGBA{205, 205, 205, 255})
+	hudNRGBA := common.ImageToNRGBA(hudImage, 200, 200)
+	hudImageObj := common.NewImageObject(hudNRGBA)
+	hudTexture := common.NewTextureSingle(hudImageObj)
+
+	hud.RenderComponent = common.RenderComponent{
+		Drawable: hudTexture,
+		Scale:    engo.Point{1, 1},
+		Repeat:   common.Repeat,
+	}
+
+	hud.RenderComponent.SetShader(common.HUDShader)
+	hud.RenderComponent.SetZIndex(1)
+
+	for _, system := range pl.world.Systems() {
+		switch sys := system.(type) {
+			case *common.RenderSystem:
+			sys.Add(&hud.BasicEntity, &hud.RenderComponent, &hud.SpaceComponent)
+		}
+	}
+
 	if engo.Input.Button("AddPlayer").JustPressed()  {
 		fmt.Println("The gamer pressed X")
 		player := Player{BasicEntity: ecs.NewBasic()}

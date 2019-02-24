@@ -52,8 +52,8 @@ func (*myScene) Setup(u engo.Updater){
 func main(){
 	opts := engo.RunOptions{
 		Title:"myGame",
-		Width:600,
-		Height:400,
+		Width:800,
+		Height:600,
 		StandardInputs: true,
 	}
 	engo.Run(opts,&myScene{})
