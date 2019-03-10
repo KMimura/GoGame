@@ -13,18 +13,16 @@ type myScene struct {}
 func (*myScene) Type() string { return "myGame" }
 
 func (*myScene) Preload() {
+	engo.Files.Load("pics/greenoctocat.png")
 	common.SetBackground(color.White)
 }
 
 func (*myScene) Setup(u engo.Updater){
-	engo.Input.RegisterButton("AddPlayer", engo.KeyX)
+	engo.Input.RegisterButton("MoveRight", engo.KeyD, engo.KeyArrowRight)
+	engo.Input.RegisterButton("MoveLeft", engo.KeyA, engo.KeyArrowLeft)
+	engo.Input.RegisterButton("Jump", engo.KeySpace)
 	world, _ := u.(*ecs.World)
 	world.AddSystem(&common.RenderSystem{})
-	world.AddSystem(&common.MouseSystem{})
-	kbs := common.NewKeyboardScroller(
-		400, engo.DefaultHorizontalAxis,
-		engo.DefaultVerticalAxis)
-	world.AddSystem(kbs)
 	world.AddSystem(&systems.PlayerSystem{})
 }
 
