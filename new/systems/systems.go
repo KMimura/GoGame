@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"engo.io/engo"
 	"engo.io/engo/common"
-	"reflect"
 )
 
 var Spritesheet *common.Spritesheet
@@ -40,7 +39,7 @@ type TileSystem struct {
 	positionX int
 	// y軸座標
 	positionY int
-	tileEntity *Tile
+	tileEntity []*Tile
 	texture *common.Texture
 }
 
@@ -49,13 +48,25 @@ func (*PlayerSystem) Remove(ecs.BasicEntity) {}
 func (*TileSystem) Remove(ecs.BasicEntity) {}
 
 func (ts *TileSystem) Update(dt float32) {
+	// 背景を移動させる
 	for _, system := range ts.world.Systems() {
-		fmt.Println(reflect.TypeOf(system))
+		switch sys := system.(type) {
+		case *TileSystem:
+			for _, t := range sys.tileEntity {
+				// 移動
+				formerXPoint := t.SpaceComponent.Position.X
+				t.SpaceComponent.Position.X = formerXPoint - 2
+				// 画面からはみ出たTileは削除する
+				if (formerXPoint < 0) {
+					sys.Remove(t.BasicEntity)
+				}
+			}
+		}
 	}
 }
 
 func (ps *PlayerSystem) Update(dt float32) {
-
+	// プレーヤーを右に移動
 	if engo.Input.Button("MoveRight").Down()  {
 		if float32(ps.positionX) < engo.WindowWidth() - 10{
 			ps.positionX += 5
@@ -66,6 +77,7 @@ func (ps *PlayerSystem) Update(dt float32) {
 			}
 		}
 	}
+	// プレーヤーを左に移動
 	if engo.Input.Button("MoveLeft").Down()  {
 		if ps.positionX > 10{
 			ps.positionX -= 5
@@ -76,12 +88,12 @@ func (ps *PlayerSystem) Update(dt float32) {
 			}
 		}
 	}
+	// プレーヤーをジャンプ
 	if engo.Input.Button("Jump").JustPressed() {
 		if ps.jumpDuration == 0 {
 			ps.jumpDuration = 1
 		}
 	}
-
 	if ps.jumpDuration != 0 {
 		ps.jumpDuration += 1
 
@@ -102,9 +114,10 @@ func (ps *PlayerSystem) Update(dt float32) {
 
 func (ps *PlayerSystem) New(w *ecs.World){
 	ps.world = w
-
+	// プレーヤーの作成
 	player := Player{BasicEntity: ecs.NewBasic()}
 
+	// 初期の配置
 	ps.positionX = int(engo.WindowWidth() / 2)
 	ps.positionY = int(engo.WindowHeight() - 88)
 	player.SpaceComponent = common.SpaceComponent{
@@ -112,6 +125,7 @@ func (ps *PlayerSystem) New(w *ecs.World){
 		Width: 30,
 		Height: 30,
 	}
+	// 画像の読み込み
 	texture, err := common.LoadedSprite("pics/greenoctocat.png")
 	if err != nil {
 		fmt.Println("Unable to load texture: " + err.Error())
@@ -121,7 +135,6 @@ func (ps *PlayerSystem) New(w *ecs.World){
 		Scale: engo.Point{X:0.1, Y:0.1},
 	}
 	player.RenderComponent.SetZIndex(1)
-
 	ps.playerEntity = &player
 	ps.texture = texture
 	for _, system := range ps.world.Systems() {
@@ -134,7 +147,7 @@ func (ps *PlayerSystem) New(w *ecs.World){
 
 func (ts *TileSystem) New(w *ecs.World){
 	ts.world = w
-
+	// タイルの作成
 	Spritesheet = common.NewSpritesheetWithBorderFromFile("tilemap/tilesheet_grass.png", 16, 16, 0, 0)
 	Tiles := make([]*Tile, 0)
 	// 地面の描画
@@ -150,6 +163,7 @@ func (ts *TileSystem) New(w *ecs.World){
 			Tiles = append(Tiles, tile)
 		}
 	}
+	// 地表の作成
 	for j := 0; j < 28; j++ {
 		tile := &Tile{BasicEntity: ecs.NewBasic()}
 		tile.SpaceComponent.Position = engo.Point{
@@ -164,6 +178,7 @@ func (ts *TileSystem) New(w *ecs.World){
 		switch sys := system.(type) {
 		case *common.RenderSystem:
 			for _, v := range Tiles {
+				ts.tileEntity = append(ts.tileEntity, v)
 				sys.Add(&v.BasicEntity, &v.RenderComponent, &v.SpaceComponent)
 			}
 		}
