@@ -29,6 +29,8 @@ type PlayerSystem struct {
 	positionY int
 	// ジャンプの時間
 	jumpDuration int
+	// プレーヤーの進んだ距離
+	distance int
 	playerEntity *Player
 	texture *common.Texture
 }
@@ -49,32 +51,48 @@ func (*TileSystem) Remove(ecs.BasicEntity) {}
 
 func (ts *TileSystem) Update(dt float32) {
 	// 背景を移動させる
-	for _, system := range ts.world.Systems() {
-		switch sys := system.(type) {
-		case *TileSystem:
-			for _, t := range sys.tileEntity {
-				// 移動
-				formerXPoint := t.SpaceComponent.Position.X
-				t.SpaceComponent.Position.X = formerXPoint - 2
-				// 画面からはみ出たTileは削除する
-				if (formerXPoint < 0) {
-					sys.Remove(t.BasicEntity)
-				}
-			}
-		}
-	}
+	// to do 
 }
 
 func (ps *PlayerSystem) Update(dt float32) {
-	// プレーヤーを右に移動
+	// 右移動
 	if engo.Input.Button("MoveRight").Down()  {
-		if float32(ps.positionX) < engo.WindowWidth() - 10{
+		// 画面の真ん中より左に位置していれば、移動する
+		if(ps.positionX < ps.distance + 50){
+			fmt.Println("LESS")
+			fmt.Println(ps.positionX)
 			ps.positionX += 5
 			ps.playerEntity.SpaceComponent = common.SpaceComponent{
 				Position: engo.Point{X:float32(ps.positionX),Y:float32(ps.positionY)},
 				Width:    30,
 				Height:   30,
 			}
+		} else {
+			fmt.Println(ps.positionX)
+			ps.positionX += 5
+			ps.playerEntity.SpaceComponent = common.SpaceComponent{
+				Position: engo.Point{X:float32(ps.positionX),Y:float32(ps.positionY)},
+				Width:    30,
+				Height:   30,
+			}
+			fmt.Println("MORE")
+			fmt.Println(ps.positionX)
+			// 画面の真ん中より右に位置していれば、カメラを移動する
+			if float32(ps.positionX) < engo.WindowWidth() - 10{
+				engo.Mailbox.Dispatch(common.CameraMessage{
+					Axis:        common.XAxis,
+					Value:       5,
+					Incremental: true,
+				})
+			}
+			// プレーヤーは画面の真ん中に
+			ps.positionX = int(engo.WindowWidth() / 2)
+			ps.playerEntity.SpaceComponent = common.SpaceComponent{
+				Position: engo.Point{X:float32(ps.positionX),Y:float32(ps.positionY)},
+				Width:    30,
+				Height:   30,
+			}
+			ps.distance += 50
 		}
 	}
 	// プレーヤーを左に移動
@@ -152,7 +170,7 @@ func (ts *TileSystem) New(w *ecs.World){
 	Tiles := make([]*Tile, 0)
 	// 地面の描画
 	for i := 0; i < 3; i++ {
-		for j := 0; j < 28; j++ {
+		for j := 0; j < 280; j++ {
 			tile := &Tile{BasicEntity: ecs.NewBasic()}
             tile.SpaceComponent.Position = engo.Point{
 				X: float32(j * 16),
@@ -164,7 +182,7 @@ func (ts *TileSystem) New(w *ecs.World){
 		}
 	}
 	// 地表の作成
-	for j := 0; j < 28; j++ {
+	for j := 0; j < 280; j++ {
 		tile := &Tile{BasicEntity: ecs.NewBasic()}
 		tile.SpaceComponent.Position = engo.Point{
 			X: float32(j * 16),
