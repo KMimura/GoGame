@@ -25,7 +25,7 @@ type PlayerSystem struct {
 	world *ecs.World
 	// ジャンプの時間
 	jumpDuration int
-	// プレーヤーの進んだ距離
+	// カメラの進んだ距離
 	distance int
 	playerEntity *Player
 	texture *common.Texture
@@ -53,46 +53,31 @@ func (ts *TileSystem) Update(dt float32) {
 func (ps *PlayerSystem) Update(dt float32) {
 	// 右移動
 	if engo.Input.Button("MoveRight").Down()  {	
-		// 画面の真ん中より左に位置していれば、移動する
-		if (int(ps.playerEntity.SpaceComponent.Position.X) < (ps.distance + int(engo.WindowWidth())) / 2){
+		fmt.Println("positionX")
+		fmt.Println(ps.playerEntity.SpaceComponent.Position.X)
+		fmt.Println("distance")
+		fmt.Println(ps.distance)
+		// 画面の真ん中より左に位置していれば、カメラを移動せずプレーヤーを移動する
+		if (int(ps.playerEntity.SpaceComponent.Position.X) < ps.distance + int(engo.WindowWidth()) / 2){
 			ps.playerEntity.SpaceComponent.Position.X += 5
-			// ps.playerEntity.SpaceComponent = common.SpaceComponent{
-			// 	Position: engo.Point{X:float32(ps.positionX),Y:float32(ps.positionY)},
-			// 	Width:    30,
-			// 	Height:   30,
-			// }
 		} else {
-			ps.playerEntity.SpaceComponent.Position.X += 5
-			// ps.playerEntity.SpaceComponent = common.SpaceComponent{
-			// 	Position: engo.Point{X:float32(ps.positionX),Y:float32(ps.positionY)},
-			// 	Width:    30,
-			// 	Height:   30,
-			// }
+			// 画面の右端に達していなければプレーヤーを移動する
+			if (int(ps.playerEntity.SpaceComponent.Position.X) < ps.distance + int(engo.WindowWidth()) - 10){
+				ps.playerEntity.SpaceComponent.Position.X += 5
+			}
 			// カメラを移動する
 			engo.Mailbox.Dispatch(common.CameraMessage{
 				Axis:        common.XAxis,
 				Value:       5,
 				Incremental: true,
 			})
-			// // プレーヤーは画面の真ん中に
-			// ps.positionX = int(engo.WindowWidth() / 2)
-			// ps.playerEntity.SpaceComponent = common.SpaceComponent{
-			// 	Position: engo.Point{X:float32(ps.positionX),Y:float32(ps.positionY)},
-			// 	Width:    30,
-			// 	Height:   30,
-			// }
 			ps.distance += 5
 		}
 	}
 	// プレーヤーを左に移動
 	if engo.Input.Button("MoveLeft").Down()  {
-		if ps.playerEntity.SpaceComponent.Position.X > 10{
+		if int(ps.playerEntity.SpaceComponent.Position.X) > ps.distance + 10{
 			ps.playerEntity.SpaceComponent.Position.X -= 5
-			// ps.playerEntity.SpaceComponent = common.SpaceComponent{
-			// 	Position: engo.Point{X:float32(ps.positionX),Y:float32(ps.positionY)},
-			// 	Width:    30,
-			// 	Height:   30,
-			// }
 		}
 	}
 	// プレーヤーをジャンプ
@@ -103,12 +88,6 @@ func (ps *PlayerSystem) Update(dt float32) {
 	}
 	if ps.jumpDuration != 0 {
 		ps.jumpDuration += 1
-
-		// ps.playerEntity.SpaceComponent = common.SpaceComponent{
-		// 	Position: engo.Point{X:float32(ps.positionX),Y:float32(ps.positionY)},
-		// 	Width:    30,
-		// 	Height:   30,
-		// }
 		if ps.jumpDuration < 14 {
 			ps.playerEntity.SpaceComponent.Position.Y -= 5
 		} else if ps.jumpDuration < 26 {
@@ -149,6 +128,10 @@ func (ps *PlayerSystem) New(w *ecs.World){
 		case *common.RenderSystem:
 			sys.Add(&player.BasicEntity, &player.RenderComponent, &player.SpaceComponent)
 		}
+	}
+	common.CameraBounds = engo.AABB{
+		Min: engo.Point{X: 0, Y: 0},
+		Max: engo.Point{X: 40000, Y: 300},
 	}
 }
 
