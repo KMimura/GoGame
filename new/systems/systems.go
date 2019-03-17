@@ -1,10 +1,12 @@
 package systems
 
 import (
+	"../utils"
 	"engo.io/ecs"
 	"fmt"
 	"engo.io/engo"
 	"engo.io/engo/common"
+	"math/rand"
 )
 
 var Spritesheet *common.Spritesheet
@@ -53,10 +55,6 @@ func (ts *TileSystem) Update(dt float32) {
 func (ps *PlayerSystem) Update(dt float32) {
 	// 右移動
 	if engo.Input.Button("MoveRight").Down()  {	
-		fmt.Println("positionX")
-		fmt.Println(ps.playerEntity.SpaceComponent.Position.X)
-		fmt.Println("distance")
-		fmt.Println(ps.distance)
 		// 画面の真ん中より左に位置していれば、カメラを移動せずプレーヤーを移動する
 		if (int(ps.playerEntity.SpaceComponent.Position.X) < ps.distance + int(engo.WindowWidth()) / 2){
 			ps.playerEntity.SpaceComponent.Position.X += 5
@@ -137,32 +135,86 @@ func (ps *PlayerSystem) New(w *ecs.World){
 
 func (ts *TileSystem) New(w *ecs.World){
 	ts.world = w
+	// 落とし穴作成中の状態を保持（0 => 作成していない、1以上 => 作成中）
+	tileMakingState := 0
+	// 落とし穴を作成した位置を保持
+	var holePosition []int
 	// タイルの作成
 	Spritesheet = common.NewSpritesheetWithBorderFromFile("tilemap/tilesheet_grass.png", 16, 16, 0, 0)
 	Tiles := make([]*Tile, 0)
 	// 地面の描画
 	for i := 0; i < 3; i++ {
 		for j := 0; j < 280; j++ {
+			// すでに作成中でない場合、たまに落とし穴を作る
+			if (tileMakingState == 0){
+				randomNum := rand.Intn(20)
+				if (randomNum == 0) {
+					holePosition = append(holePosition,j)
+					tileMakingState = 1
+				}
+			}
+			// 描画するタイルを保持
+			var selectedTile int
+			// 描画するタイルを選択
+			switch tileMakingState {
+				case 0: selectedTile = 17
+				case 1: selectedTile = 18
+				case 2: selectedTile = 116
+				case 3: selectedTile = 19
+			}
 			tile := &Tile{BasicEntity: ecs.NewBasic()}
             tile.SpaceComponent.Position = engo.Point{
 				X: float32(j * 16),
 				Y: float32(285 - i * 16),
 			}
-			tile.RenderComponent.Drawable = Spritesheet.Cell(17)
+			tile.RenderComponent.Drawable = Spritesheet.Cell(selectedTile)
 			tile.RenderComponent.SetZIndex(0)
 			Tiles = append(Tiles, tile)
+
+			if (tileMakingState > 0){
+				if (tileMakingState < 3){
+					// 落とし穴を作り終わった場合
+					tileMakingState = 0
+				}else {
+					tileMakingState += 1
+				}
+			}
 		}
 	}
+	tileMakingState = 0
 	// 地表の作成
 	for j := 0; j < 280; j++ {
+		if (tileMakingState == 0){
+			// 落とし穴を作る場合
+			if (utils.Contains(holePosition,j)){
+				tileMakingState = 1
+			}
+		}
+		// 描画するタイルを保持
+		var selectedTile int
+		// 描画するタイルを選択
+		switch tileMakingState {
+			case 0: selectedTile = 1
+			case 1: selectedTile = 2
+			case 2: selectedTile = 116
+			case 3: selectedTile = 0
+		}
 		tile := &Tile{BasicEntity: ecs.NewBasic()}
 		tile.SpaceComponent.Position = engo.Point{
 			X: float32(j * 16),
 			Y: float32(237),
 		}
-		tile.RenderComponent.Drawable = Spritesheet.Cell(1)
+		tile.RenderComponent.Drawable = Spritesheet.Cell(selectedTile)
 		tile.RenderComponent.SetZIndex(0)
 		Tiles = append(Tiles, tile)
+
+		if (tileMakingState > 0){
+			if (tileMakingState == 3){
+				tileMakingState = 0
+				continue
+			}
+			tileMakingState += 1
+		}
 	}
 	for _, system := range ts.world.Systems() {
 		switch sys := system.(type) {
