@@ -158,8 +158,9 @@ func (ts *TileSystem) New(w *ecs.World){
 		switch tileMakingState {
 			case 0: selectedTile = 1
 			case 1: selectedTile = 2
-			case 2: selectedTile = 116
-			case 3: selectedTile = 0
+			case 2: continue
+			case 3: continue
+			case 4: selectedTile = 0
 		}
 		tile := &Tile{BasicEntity: ecs.NewBasic()}
 		tile.SpaceComponent.Position = engo.Point{
@@ -171,7 +172,7 @@ func (ts *TileSystem) New(w *ecs.World){
 		Tiles = append(Tiles, tile)
 
 		if (tileMakingState > 0){
-			if (tileMakingState == 3){
+			if (tileMakingState == 4){
 				tileMakingState = 0
 				continue
 			}
@@ -180,6 +181,7 @@ func (ts *TileSystem) New(w *ecs.World){
 	}
 	// 地面の描画
 	for i := 0; i < 3; i++ {
+		tileMakingState = 0
 		for j := 0; j < 280; j++ {
 			if (tileMakingState == 0){
 				// 落とし穴を作る場合
@@ -193,8 +195,9 @@ func (ts *TileSystem) New(w *ecs.World){
 			switch tileMakingState {
 				case 0: selectedTile = 17
 				case 1: selectedTile = 18
-				case 2: selectedTile = 116
-				case 3: selectedTile = 19
+				case 2: continue
+				case 3: continue
+				case 4: selectedTile = 16
 			}
 			tile := &Tile{BasicEntity: ecs.NewBasic()}
             tile.SpaceComponent.Position = engo.Point{
@@ -206,13 +209,12 @@ func (ts *TileSystem) New(w *ecs.World){
 			Tiles = append(Tiles, tile)
 
 			if (tileMakingState > 0){
-				if (tileMakingState < 3){
-					// 落とし穴を作り終わった場合
+				if (tileMakingState == 4){
 					tileMakingState = 0
-				}else {
-					tileMakingState += 1
+					continue
 				}
-			}
+				tileMakingState += 1
+				}
 		}
 	}
 	tileMakingState = 0
