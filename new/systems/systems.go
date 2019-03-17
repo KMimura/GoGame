@@ -137,13 +137,17 @@ func (ts *TileSystem) New(w *ecs.World){
 	ts.world = w
 	// 落とし穴作成中の状態を保持（0 => 作成していない、1以上 => 作成中）
 	tileMakingState := 0
+	// 雲の作成中の状態を保持 (0の場合:作成していない、奇数の場合:{(x+1)/2}番目の雲の前半を作成中、偶数の場合:{x/2}番目の雲の後半を作成中)
+	cloudMakingState := 0
+	// 雲の高さを保持
+	cloudHeight := 0
 	// 落とし穴を作成した位置を保持
 	var holePosition []int
 	// タイルの作成
 	Spritesheet = common.NewSpritesheetWithBorderFromFile("tilemap/tilesheet_grass.png", 16, 16, 0, 0)
 	Tiles := make([]*Tile, 0)
-	// 地表の作成
 	for j := 0; j < 2800; j++ {
+		// 地表の作成
 		// すでに作成中でない場合、たまに落とし穴を作る
 		if (tileMakingState == 0){
 			randomNum := rand.Intn(20)
@@ -178,6 +182,31 @@ func (ts *TileSystem) New(w *ecs.World){
 			}
 			tileMakingState += 1
 		}
+		// 雲の作成
+		if (cloudMakingState == 0){
+			randomNum := rand.Intn(12)
+			if (randomNum < 7 && randomNum % 2 == 1) {
+				cloudMakingState = randomNum
+			}
+			cloudHeight = rand.Intn(70) + 10
+		}
+		if (cloudMakingState != 0){
+			cloudTile := cloudMakingState + 9
+			cloud := &Tile{BasicEntity: ecs.NewBasic()}
+			cloud.SpaceComponent.Position = engo.Point{
+				X: float32(j * 16),
+				Y: float32(cloudHeight),
+			}
+			cloud.RenderComponent.Drawable = Spritesheet.Cell(cloudTile)
+			cloud.RenderComponent.SetZIndex(0)
+			Tiles = append(Tiles, cloud)
+			// 前半を作成中であれば、次は後半を作成する
+			if (cloudMakingState % 2 == 1){
+				cloudMakingState += 1
+			} else {
+				cloudMakingState = 0
+			}
+		}
 	}
 	// 地面の描画
 	for i := 0; i < 3; i++ {
@@ -211,7 +240,6 @@ func (ts *TileSystem) New(w *ecs.World){
 			if (tileMakingState > 0){
 				if (tileMakingState == 4){
 					tileMakingState = 0
-					fmt.Println("init")
 					continue
 				}
 				tileMakingState += 1
