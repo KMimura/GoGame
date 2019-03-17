@@ -142,14 +142,48 @@ func (ts *TileSystem) New(w *ecs.World){
 	// タイルの作成
 	Spritesheet = common.NewSpritesheetWithBorderFromFile("tilemap/tilesheet_grass.png", 16, 16, 0, 0)
 	Tiles := make([]*Tile, 0)
+	// 地表の作成
+	for j := 0; j < 280; j++ {
+		// すでに作成中でない場合、たまに落とし穴を作る
+		if (tileMakingState == 0){
+			randomNum := rand.Intn(20)
+			if (randomNum == 0) {
+				holePosition = append(holePosition,j)
+				tileMakingState = 1
+			}
+		}
+		// 描画するタイルを保持
+		var selectedTile int
+		// 描画するタイルを選択
+		switch tileMakingState {
+			case 0: selectedTile = 1
+			case 1: selectedTile = 2
+			case 2: selectedTile = 116
+			case 3: selectedTile = 0
+		}
+		tile := &Tile{BasicEntity: ecs.NewBasic()}
+		tile.SpaceComponent.Position = engo.Point{
+			X: float32(j * 16),
+			Y: float32(237),
+		}
+		tile.RenderComponent.Drawable = Spritesheet.Cell(selectedTile)
+		tile.RenderComponent.SetZIndex(0)
+		Tiles = append(Tiles, tile)
+
+		if (tileMakingState > 0){
+			if (tileMakingState == 3){
+				tileMakingState = 0
+				continue
+			}
+			tileMakingState += 1
+		}
+	}
 	// 地面の描画
 	for i := 0; i < 3; i++ {
 		for j := 0; j < 280; j++ {
-			// すでに作成中でない場合、たまに落とし穴を作る
 			if (tileMakingState == 0){
-				randomNum := rand.Intn(20)
-				if (randomNum == 0) {
-					holePosition = append(holePosition,j)
+				// 落とし穴を作る場合
+				if (utils.Contains(holePosition,j)){
 					tileMakingState = 1
 				}
 			}
@@ -182,40 +216,6 @@ func (ts *TileSystem) New(w *ecs.World){
 		}
 	}
 	tileMakingState = 0
-	// 地表の作成
-	for j := 0; j < 280; j++ {
-		if (tileMakingState == 0){
-			// 落とし穴を作る場合
-			if (utils.Contains(holePosition,j)){
-				tileMakingState = 1
-			}
-		}
-		// 描画するタイルを保持
-		var selectedTile int
-		// 描画するタイルを選択
-		switch tileMakingState {
-			case 0: selectedTile = 1
-			case 1: selectedTile = 2
-			case 2: selectedTile = 116
-			case 3: selectedTile = 0
-		}
-		tile := &Tile{BasicEntity: ecs.NewBasic()}
-		tile.SpaceComponent.Position = engo.Point{
-			X: float32(j * 16),
-			Y: float32(237),
-		}
-		tile.RenderComponent.Drawable = Spritesheet.Cell(selectedTile)
-		tile.RenderComponent.SetZIndex(0)
-		Tiles = append(Tiles, tile)
-
-		if (tileMakingState > 0){
-			if (tileMakingState == 3){
-				tileMakingState = 0
-				continue
-			}
-			tileMakingState += 1
-		}
-	}
 	for _, system := range ts.world.Systems() {
 		switch sys := system.(type) {
 		case *common.RenderSystem:
