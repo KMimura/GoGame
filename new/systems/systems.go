@@ -11,6 +11,9 @@ import (
 
 var Spritesheet *common.Spritesheet
 
+// 落とし穴のあるX座標
+var fallPoint []int
+
 type Player struct {
 	ecs.BasicEntity
 	common.RenderComponent
@@ -141,8 +144,6 @@ func (ts *TileSystem) New(w *ecs.World){
 	cloudMakingState := 0
 	// 雲の高さを保持
 	cloudHeight := 0
-	// 落とし穴を作成した位置を保持
-	var holePosition []int
 	// タイルの作成
 	Spritesheet = common.NewSpritesheetWithBorderFromFile("tilemap/tilesheet_grass.png", 16, 16, 0, 0)
 	Tiles := make([]*Tile, 0)
@@ -152,7 +153,7 @@ func (ts *TileSystem) New(w *ecs.World){
 		if (tileMakingState == 0){
 			randomNum := rand.Intn(20)
 			if (randomNum == 0) {
-				holePosition = append(holePosition,j)
+				fallPoint = append(fallPoint,j)
 				tileMakingState = 1
 			}
 		}
@@ -207,6 +208,24 @@ func (ts *TileSystem) New(w *ecs.World){
 				cloudMakingState = 0
 			}
 		}
+		//草の作成
+		if (!utils.Contains(fallPoint,j)){
+			// 落とし穴の上には作らない
+			var grassTile int
+			randomNum := rand.Intn(42)
+			if (randomNum  < 6) {
+				grassTile = 26 + randomNum
+				grass := &Tile{BasicEntity: ecs.NewBasic()}
+				grass.SpaceComponent.Position = engo.Point{
+					X: float32(j * 16),
+					Y: float32(221),
+				}
+				grass.RenderComponent.Drawable = Spritesheet.Cell(grassTile)
+				grass.RenderComponent.SetZIndex(1)
+				Tiles = append(Tiles, grass)
+	
+			}
+		}
 	}
 	// 地面の描画
 	for i := 0; i < 3; i++ {
@@ -214,7 +233,7 @@ func (ts *TileSystem) New(w *ecs.World){
 		for j := 0; j < 2800; j++ {
 			if (tileMakingState == 0){
 				// 落とし穴を作る場合
-				if (utils.Contains(holePosition,j)){
+				if (utils.Contains(fallPoint,j)){
 					tileMakingState = 1
 				}
 			}
