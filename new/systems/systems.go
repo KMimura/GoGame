@@ -143,7 +143,7 @@ func (ts *TileSystem) New(w *ecs.World){
 	Spritesheet = common.NewSpritesheetWithBorderFromFile("tilemap/tilesheet_grass.png", 16, 16, 0, 0)
 	Tiles := make([]*Tile, 0)
 	// 地表の作成
-	for j := 0; j < 280; j++ {
+	for j := 0; j < 2800; j++ {
 		// すでに作成中でない場合、たまに落とし穴を作る
 		if (tileMakingState == 0){
 			randomNum := rand.Intn(20)
@@ -158,8 +158,8 @@ func (ts *TileSystem) New(w *ecs.World){
 		switch tileMakingState {
 			case 0: selectedTile = 1
 			case 1: selectedTile = 2
-			case 2: continue
-			case 3: continue
+			case 2: tileMakingState += 1; continue
+			case 3: tileMakingState += 1; continue
 			case 4: selectedTile = 0
 		}
 		tile := &Tile{BasicEntity: ecs.NewBasic()}
@@ -182,7 +182,7 @@ func (ts *TileSystem) New(w *ecs.World){
 	// 地面の描画
 	for i := 0; i < 3; i++ {
 		tileMakingState = 0
-		for j := 0; j < 280; j++ {
+		for j := 0; j < 2800; j++ {
 			if (tileMakingState == 0){
 				// 落とし穴を作る場合
 				if (utils.Contains(holePosition,j)){
@@ -195,8 +195,8 @@ func (ts *TileSystem) New(w *ecs.World){
 			switch tileMakingState {
 				case 0: selectedTile = 17
 				case 1: selectedTile = 18
-				case 2: continue
-				case 3: continue
+				case 2: tileMakingState += 1; continue
+				case 3: tileMakingState += 1; continue
 				case 4: selectedTile = 16
 			}
 			tile := &Tile{BasicEntity: ecs.NewBasic()}
@@ -211,10 +211,11 @@ func (ts *TileSystem) New(w *ecs.World){
 			if (tileMakingState > 0){
 				if (tileMakingState == 4){
 					tileMakingState = 0
+					fmt.Println("init")
 					continue
 				}
 				tileMakingState += 1
-				}
+			}
 		}
 	}
 	tileMakingState = 0
