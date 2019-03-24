@@ -27,6 +27,7 @@ func (*myScene) Setup(u engo.Updater){
 	world.AddSystem(&common.RenderSystem{})
 	world.AddSystem(&systems.TileSystem{})
 	world.AddSystem(&systems.PlayerSystem{})
+	world.AddSystem(&systems.EnemySystem{})
 
 }
 
