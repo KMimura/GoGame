@@ -14,6 +14,7 @@ func (*myScene) Type() string { return "myGame" }
 
 func (*myScene) Preload() {
 	engo.Files.Load("pics/greenoctocat.png")
+	engo.Files.Load("pics/redoctocat.png")
 	engo.Files.Load("tilemap/tilesheet_grass.png")
 	common.SetBackground(color.RGBA{255, 250, 220, 0})
 }

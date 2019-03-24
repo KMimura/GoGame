@@ -13,12 +13,30 @@ var Spritesheet *common.Spritesheet
 
 // 落とし穴のあるX座標
 var fallPoint []int
+// 落とし穴の始まるX座標
+var fallStartPoint []int
 
 type Player struct {
 	ecs.BasicEntity
 	common.RenderComponent
 	common.SpaceComponent
+	// ジャンプの時間
+	jumpDuration int
+	// カメラの進んだ距離
+	distance int
+	// 落ちているかどうか
+	ifFalling bool
 }
+
+// type Enemy struct {
+// 	ecs.BasicEntity
+// 	common.RenderComponent
+// 	common.SpaceComponent
+// 	// ジャンプの時間
+// 	jumpDuration int
+// 	// カメラの進んだ距離
+// 	distance int
+// }
 
 type Tile struct {
 	ecs.BasicEntity
@@ -28,13 +46,15 @@ type Tile struct {
 
 type PlayerSystem struct {
 	world *ecs.World
-	// ジャンプの時間
-	jumpDuration int
-	// カメラの進んだ距離
-	distance int
 	playerEntity *Player
 	texture *common.Texture
 }
+
+// type EnemySystem struct {
+// 	world *ecs.World
+// 	enemyEntity *Enemy
+// 	texture *common.Texture
+// }
 
 type TileSystem struct {
 	world *ecs.World
@@ -51,19 +71,24 @@ func (*PlayerSystem) Remove(ecs.BasicEntity) {}
 func (*TileSystem) Remove(ecs.BasicEntity) {}
 
 func (ts *TileSystem) Update(dt float32) {
-	// 背景を移動させる
-	// to do 
 }
 
 func (ps *PlayerSystem) Update(dt float32) {
-	// 右移動
+	// 当たり判定
+	if (ps.playerEntity.jumpDuration == 0 && utils.Contains(fallPoint,int(ps.playerEntity.SpaceComponent.Position.X)) ){
+		fmt.Println(ps.playerEntity.SpaceComponent.Position.X)
+		ps.playerEntity.ifFalling = true
+		ps.playerEntity.SpaceComponent.Position.Y += 10
+	}
+	if(!ps.playerEntity.ifFalling){
+			// 右移動
 	if engo.Input.Button("MoveRight").Down()  {	
 		// 画面の真ん中より左に位置していれば、カメラを移動せずプレーヤーを移動する
-		if (int(ps.playerEntity.SpaceComponent.Position.X) < ps.distance + int(engo.WindowWidth()) / 2){
+		if (int(ps.playerEntity.SpaceComponent.Position.X) < ps.playerEntity.distance + int(engo.WindowWidth()) / 2){
 			ps.playerEntity.SpaceComponent.Position.X += 5
 		} else {
 			// 画面の右端に達していなければプレーヤーを移動する
-			if (int(ps.playerEntity.SpaceComponent.Position.X) < ps.distance + int(engo.WindowWidth()) - 10){
+			if (int(ps.playerEntity.SpaceComponent.Position.X) < ps.playerEntity.distance + int(engo.WindowWidth()) - 10){
 				ps.playerEntity.SpaceComponent.Position.X += 5
 			}
 			// カメラを移動する
@@ -72,30 +97,31 @@ func (ps *PlayerSystem) Update(dt float32) {
 				Value:       5,
 				Incremental: true,
 			})
-			ps.distance += 5
+			ps.playerEntity.distance += 5
 		}
 	}
 	// プレーヤーを左に移動
 	if engo.Input.Button("MoveLeft").Down()  {
-		if int(ps.playerEntity.SpaceComponent.Position.X) > ps.distance + 10{
+		if int(ps.playerEntity.SpaceComponent.Position.X) > ps.playerEntity.distance + 10{
 			ps.playerEntity.SpaceComponent.Position.X -= 5
 		}
 	}
 	// プレーヤーをジャンプ
 	if engo.Input.Button("Jump").JustPressed() {
-		if ps.jumpDuration == 0 {
-			ps.jumpDuration = 1
+		if ps.playerEntity.jumpDuration == 0 {
+			ps.playerEntity.jumpDuration = 1
 		}
 	}
-	if ps.jumpDuration != 0 {
-		ps.jumpDuration += 1
-		if ps.jumpDuration < 14 {
+	if ps.playerEntity.jumpDuration != 0 {
+		ps.playerEntity.jumpDuration += 1
+		if ps.playerEntity.jumpDuration < 14 {
 			ps.playerEntity.SpaceComponent.Position.Y -= 5
-		} else if ps.jumpDuration < 26 {
+		} else if ps.playerEntity.jumpDuration < 26 {
 			ps.playerEntity.SpaceComponent.Position.Y += 5
 		} else {
-			ps.jumpDuration = 0
+			ps.playerEntity.jumpDuration = 0
 		}
+	}
 	}
 }
 
@@ -150,11 +176,18 @@ func (ts *TileSystem) New(w *ecs.World){
 	for j := 0; j < 2800; j++ {
 		// 地表の作成
 		// すでに作成中でない場合、たまに落とし穴を作る
-		if (tileMakingState == 0){
-			randomNum := rand.Intn(20)
-			if (randomNum == 0) {
-				fallPoint = append(fallPoint,j)
-				tileMakingState = 1
+		// スタート地点には作らない
+		if (j > 10){
+			if (tileMakingState > 1 && tileMakingState < 4){
+				for t:= 0; t < 8; t++ {
+					fallPoint = append(fallPoint,j * 16 - t)
+				}
+			} else if (tileMakingState == 0){
+				randomNum := rand.Intn(10)
+				if (randomNum == 0) {
+					fallStartPoint = append(fallStartPoint,j * 16)
+					tileMakingState = 1
+				}
 			}
 		}
 		// 描画するタイルを保持
@@ -183,9 +216,11 @@ func (ts *TileSystem) New(w *ecs.World){
 			}
 			tileMakingState += 1
 		}
+	}
+	for j := 0; j < 2800; j++ {
 		// 雲の作成
 		if (cloudMakingState == 0){
-			randomNum := rand.Intn(12)
+			randomNum := rand.Intn(6)
 			if (randomNum < 7 && randomNum % 2 == 1) {
 				cloudMakingState = randomNum
 			}
@@ -209,10 +244,10 @@ func (ts *TileSystem) New(w *ecs.World){
 			}
 		}
 		//草の作成
-		if (!utils.Contains(fallPoint,j)){
+		if (!utils.Contains(fallPoint,j * 16)){
 			// 落とし穴の上には作らない
 			var grassTile int
-			randomNum := rand.Intn(42)
+			randomNum := rand.Intn(18)
 			if (randomNum  < 6) {
 				grassTile = 26 + randomNum
 				grass := &Tile{BasicEntity: ecs.NewBasic()}
@@ -226,6 +261,7 @@ func (ts *TileSystem) New(w *ecs.World){
 	
 			}
 		}
+
 	}
 	// 地面の描画
 	for i := 0; i < 3; i++ {
@@ -233,7 +269,7 @@ func (ts *TileSystem) New(w *ecs.World){
 		for j := 0; j < 2800; j++ {
 			if (tileMakingState == 0){
 				// 落とし穴を作る場合
-				if (utils.Contains(fallPoint,j)){
+				if (utils.Contains(fallStartPoint,j * 16)){
 					tileMakingState = 1
 				}
 			}
@@ -248,7 +284,7 @@ func (ts *TileSystem) New(w *ecs.World){
 				case 4: selectedTile = 16
 			}
 			tile := &Tile{BasicEntity: ecs.NewBasic()}
-            tile.SpaceComponent.Position = engo.Point{
+			tile.SpaceComponent.Position = engo.Point{
 				X: float32(j * 16),
 				Y: float32(285 - i * 16),
 			}
@@ -275,5 +311,18 @@ func (ts *TileSystem) New(w *ecs.World){
 			}
 		}
 	}
-
+	for _,o := range fallPoint {
+		fmt.Println(o)
+	}
 }
+
+// func (es *EnemySystem) New(w *ecs.World){
+// 	es.world = w
+// 	// 敵の作成
+// 	enemy := Enemy{BasicEntity: ecs.NewBasic()}
+
+// 	Enemies := make([]*Enemy, 0)
+// 	for i := 0; i < 2800; i++ {
+
+// 	}
+// }
