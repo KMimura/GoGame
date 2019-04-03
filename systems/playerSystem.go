@@ -68,11 +68,20 @@ func (ps *PlayerSystem) New(w *ecs.World){
 func (*PlayerSystem) Remove(ecs.BasicEntity) {}
 
 func (ps *PlayerSystem) Update(dt float32) {
-	// 当たり判定
+	// ダメージが1であればゲームを終了
+	if ps.playerEntity.damage > 0 {
+		whenDied(ps)
+	}
+	// 落とし穴
 	if (ps.playerEntity.jumpDuration == 0 && utils.Contains(FallPoint,int(ps.playerEntity.SpaceComponent.Position.X)) ){
 		ps.playerEntity.ifFalling = true
 		ps.playerEntity.SpaceComponent.Position.Y += 5
 	}
+	// 穴に落ち切ったらライフを0にする
+	if ps.playerEntity.SpaceComponent.Position.Y > 300 {
+		ps.playerEntity.damage += 1
+	}
+
 	if(!ps.playerEntity.ifFalling){
 			// 右移動
 	if engo.Input.Button("MoveRight").Down()  {	
@@ -118,3 +127,16 @@ func (ps *PlayerSystem) Update(dt float32) {
 	}
 }
 
+func whenDied(ps *PlayerSystem) {
+	for _, system := range ps.world.Systems() {
+		switch sys := system.(type) {
+		case *EnemySystem:
+			for _, e := range sys.enemyEntity {
+				sys.Remove(e.BasicEntity)
+			}
+		case *common.RenderSystem:
+			sys.Remove(ps.playerEntity.BasicEntity)
+			ps.world.AddSystem(&HUDTextSystem{})
+		}
+	}
+}

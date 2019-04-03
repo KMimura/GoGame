@@ -6,6 +6,7 @@ import (
 	"engo.io/engo"
 	"engo.io/engo/common"
 	"math/rand"
+	"time"
 )
 
 var Spritesheet *common.Spritesheet
@@ -37,6 +38,8 @@ func (ts *TileSystem) Update(dt float32) {
 }
 
 func (ts *TileSystem) New(w *ecs.World){
+	rand.Seed(time.Now().UnixNano())
+
 	ts.world = w
 	// 落とし穴作成中の状態を保持（0 => 作成していない、1以上 => 作成中）
 	tileMakingState := 0
@@ -45,7 +48,14 @@ func (ts *TileSystem) New(w *ecs.World){
 	// 雲の高さを保持
 	cloudHeight := 0
 	// タイルの作成
-	Spritesheet = common.NewSpritesheetWithBorderFromFile("tilemap/tilesheet_grass.png", 16, 16, 0, 0)
+	tmp := rand.Intn(2)
+	var loadTxt string
+	if tmp == 0 {
+		loadTxt = "tilemap/tilesheet_grass.png"
+	} else {
+		loadTxt = "tilemap/tilesheet_snow.png"
+	}
+	Spritesheet = common.NewSpritesheetWithBorderFromFile(loadTxt, 16, 16, 0, 0)
 	Tiles := make([]*Tile, 0)
 	for j := 0; j < 2800; j++ {
 		// 地表の作成

@@ -17,7 +17,7 @@ func (*myScene) Type() string { return "myGame" }
 func (*myScene) Preload() {
 	//"tilemap/tilesheet_grass.png"
 	//https://pipoya.net/sozai/
-	engo.Files.Load("pics/greenoctocat.png", "pics/ghost.png", "tilemap/tilesheet_grass.png")
+	engo.Files.Load("pics/greenoctocat.png", "pics/ghost.png", "tilemap/tilesheet_grass.png", "tilemap/tilesheet_snow.png")
 	engo.Files.LoadReaderData("go.ttf", bytes.NewReader(gosmallcaps.TTF))
 	common.SetBackground(color.RGBA{255, 250, 220, 0})
 }
@@ -31,6 +31,10 @@ func (*myScene) Setup(u engo.Updater){
 	world.AddSystem(&systems.TileSystem{})
 	world.AddSystem(&systems.PlayerSystem{})
 	world.AddSystem(&systems.EnemySystem{})
+}
+
+func (*myScene) Exit() {
+	engo.Exit()
 }
 
 func main(){

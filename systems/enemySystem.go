@@ -28,7 +28,14 @@ type EnemySystem struct {
 	texture *common.Texture
 }
 
-func (*EnemySystem) Remove(ecs.BasicEntity) {}
+func (es *EnemySystem) Remove(entity ecs.BasicEntity) {
+	for _, system := range es.world.Systems() {
+		switch sys := system.(type) {
+		case *common.RenderSystem:
+			sys.Remove(entity)
+		}
+	}
+}
 
 func (es *EnemySystem) Update(dt float32) {
 	// カメラとプレーヤーの位置を取得
