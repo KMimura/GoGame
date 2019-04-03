@@ -60,9 +60,9 @@ func (es *EnemySystem) Update(dt float32) {
 				o.jumpState = rand.Intn(2) + 1
 				jumpTemp := rand.Intn(3)
 				switch (jumpTemp) {
-					case 0: o.jumpDuration = 5
-					case 1: o.jumpDuration = 10
-					case 2: o.jumpDuration = 15
+					case 0: o.jumpDuration = 15
+					case 1: o.jumpDuration = 25
+					case 2: o.jumpDuration = 35
 				}
 			}
 			// ジャンプ処理
@@ -105,13 +105,13 @@ func (es *EnemySystem) New(w *ecs.World){
 				Height: 30,
 			}
 			// 画像の読み込み
-			texture, err := common.LoadedSprite("pics/redoctocat.png")
+			texture, err := common.LoadedSprite("pics/ghost.png")
 			if err != nil {
 				fmt.Println("Unable to load texture: " + err.Error())
 			}
 			enemy.RenderComponent = common.RenderComponent{
 				Drawable: texture,
-				Scale: engo.Point{X:0.1, Y:0.1},
+				Scale: engo.Point{X:1.1, Y:1.1},
 			}
 			enemy.RenderComponent.SetZIndex(1)
 			es.texture = texture
