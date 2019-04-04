@@ -59,14 +59,13 @@ func (ts *TileSystem) New(w *ecs.World){
 	Tiles := make([]*Tile, 0)
 	for j := 0; j < 2800; j++ {
 		// 地表の作成
-		// すでに作成中でない場合、たまに落とし穴を作る
-		// スタート地点には作らない
 		if (j > 10){
 			if (tileMakingState > 1 && tileMakingState < 4){
 				for t:= 0; t < 8; t++ {
 					FallPoint = append(FallPoint,j * 16 - t)
 				}
 			} else if (tileMakingState == 0){
+				// すでに作成中でない場合、たまに落とし穴を作る
 				randomNum := rand.Intn(10)
 				if (randomNum == 0) {
 					FallStartPoint = append(FallStartPoint,j * 16)
@@ -84,11 +83,14 @@ func (ts *TileSystem) New(w *ecs.World){
 			case 3: tileMakingState += 1; continue
 			case 4: selectedTile = 0
 		}
+		// タイルEntityの作成
 		tile := &Tile{BasicEntity: ecs.NewBasic()}
+		// 位置情報の設定
 		tile.SpaceComponent.Position = engo.Point{
 			X: float32(j * 16),
 			Y: float32(237),
 		}
+		// 見た目の設定
 		tile.RenderComponent.Drawable = Spritesheet.Cell(selectedTile)
 		tile.RenderComponent.SetZIndex(0)
 		Tiles = append(Tiles, tile)
@@ -111,6 +113,7 @@ func (ts *TileSystem) New(w *ecs.World){
 			cloudHeight = rand.Intn(70) + 10
 		}
 		if (cloudMakingState != 0){
+			// 雲Entityの作成
 			cloudTile := cloudMakingState + 9
 			cloud := &Tile{BasicEntity: ecs.NewBasic()}
 			cloud.SpaceComponent.Position = engo.Point{
